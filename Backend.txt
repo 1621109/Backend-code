@@ -1,0 +1,69 @@
+Task 1: Stripe Integration for Customer Creation using Temporal Workflow
+Setup Stripe SDK: Add the Stripe dependency to your build.gradle file:
+dependencies {
+    implementation 'com.stripe:stripe-java:20.26.0'
+}
+Implement Customer Creation Workflow using Temporal:
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Customer;
+
+public class StripeService {
+
+    public String createCustomer(String email) throws StripeException {
+        Stripe.apiKey = "sk_test_your_secret_key";
+
+        Customer customer = Customer.create(
+            new HashMap<String, Object>() {{
+                put("email", email);
+            }}
+        );
+        return customer.getId();
+    }
+}
+
+Task 2: Add Fields in the APIs
+Update User Model:
+public enum ProviderType {
+    STRIPE
+}
+
+public class User {
+    private ProviderType providerType;
+    private String providerId;
+
+    // Getters and setters
+}
+
+Update Controller:
+@RestController
+public class UserController {
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private StripeService stripeService;
+
+    @PostMapping("/signup")
+    public ResponseEntity<?> signup(@RequestBody SignupRequest request) {
+        try {
+            String customerId = stripeService.createCustomer(request.getEmail());
+            User user = new User();
+            user.setProviderType(ProviderType.STRIPE);
+            user.setProviderId(customerId);
+            // Save user to database or perform other necessary actions
+            return ResponseEntity.ok("User signed up successfully!");
+        } catch (StripeException e) {
+            // Handle Stripe API exception
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error signing up user");
+        }
+    }
+}
+
+Task 3: API Implementation
+You can use the provided GET /accounts endpoint to verify the integration and functionality of your changes.
+Task 4: Bonus: Writing Tests
+Write unit tests for the Stripe integration code using testing frameworks like JUnit and Mockito.
+Write tests for the user model to ensure that the new fields are added correctly and data is stored appropriately.
+Write integration tests to cover the signup process and the functionality of the GET /accounts endpoint.
